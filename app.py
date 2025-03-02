@@ -5,7 +5,6 @@ import telebot
 import uuid
 from flask import Flask, request, jsonify
 import Pycodz.ai as z44o
-
 # قراءة التوكن ومعرف الدردشة من البيئة
 BOTTOKEN = '7207961885:AAGRf5GZTCOGL5QSBe56xTs7C1d8kpM-R5s'
 ADMINID = '1090494697'
