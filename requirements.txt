@@ -52,4 +52,3 @@ orjson
 poe-api-wrapper
 pyTelegramBotAPI
 uuid
-threading
