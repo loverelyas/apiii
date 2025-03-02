@@ -50,3 +50,5 @@ mdurl
 multidict
 orjson
 poe-api-wrapper
+pyTelegramBotAPI
+uuid
