@@ -15,6 +15,8 @@ admin_bot = telebot.TeleBot(BOTTOKEN)
 # قاعدة بيانات مؤقتة (تستخدم ذاكرة البوت)
 user_db = {}  # تخزين بيانات المستخدمين {user_id: is_blocked}
 
+
+
 def install_missing_packages():
     required_libs = ["flask", "Pycodz", "gunicorn", "pyTelegramBotAPI", "python-dotenv"]  # ضع أي مكتبات تستخدمها هنا
     for lib in required_libs:
@@ -41,23 +43,15 @@ def add_headers(response):
 @app.route('/api', methods=['GET'])
 def chat():
     try:
-        # الحصول على معرف المستخدم من ملفات تعريف الارتباط (Cookies)
-        user_id = request.cookies.get('user_id')
-
-        # إذا لم يكن هناك معرف مستخدم، قم بإنشاء واحد جديد
-        if not user_id:
-            user_id = str(uuid.uuid4())  # إنشاء معرف فريد
-            response = jsonify({"response": "تم إنشاء معرف مستخدم جديد.", "user_id": user_id})
-            response.set_cookie('user_id', user_id)  # تعيين ملف تعريف الارتباط
-            return response, 200
-
+        # الحصول على عنوان IP المستخدم
+        user_ip = request.remote_addr
         msg = request.args.get('msg', '').strip()  # الحصول على الرسالة
 
         if not msg:
             return jsonify({"error": "❌ يجب إرسال رسالة عبر ?msg="}), 400
 
         # التحقق من حالة المستخدم
-        if user_id in user_db and user_db[user_id] == 1:  # إذا كان المستخدم محظورًا
+        if user_ip in user_db and user_db[user_ip] == 1:  # إذا كان المستخدم محظورًا
             return jsonify({"error": "❌ تم حظرك من استخدام الخدمة.", "status": "blocked"}), 403
 
         # معالجة الطلب
@@ -67,7 +61,7 @@ def chat():
         # إرسال الطلب والرد معًا إلى الإدمن
         message_to_admin = f"""
 📩 *طلب جديد من المستخدم:*
-User ID: {user_id}
+IP: {user_ip}
 الرسالة: {msg}
 
 📤 *الرد من API:*
@@ -83,30 +77,30 @@ User ID: {user_id}
         return jsonify({"error": "❌ خطأ داخلي في السيرفر", "details": str(e), "status": "error"}), 500
 
 # أوامر البوت للتحكم في المستخدمين
-@admin_bot.message_handler(commands=['ban'])
+@admin_bot.message_handler(commands=['block'])
 def block_user(message):
     """حظر مستخدم"""
     try:
-        user_id = message.text.split()[1]  # الحصول على معرف المستخدم من الرسالة
-        user_db[user_id] = 1  # حظر المستخدم
-        admin_bot.reply_to(message, f"✅ تم حظر المستخدم ذو المعرف {user_id}.")
+        user_ip = message.text.split()[1]  # الحصول على عنوان IP من الرسالة
+        user_db[user_ip] = 1  # حظر المستخدم
+        admin_bot.reply_to(message, f"✅ تم حظر المستخدم ذو العنوان {user_ip}.")
     except IndexError:
-        admin_bot.reply_to(message, "❌ يجب إرسال معرف المستخدم مع الأمر. مثال: /block user123")
+        admin_bot.reply_to(message, "❌ يجب إرسال عنوان IP مع الأمر. مثال: /block 192.168.1.1")
     except Exception as e:
         admin_bot.reply_to(message, f"❌ حدث خطأ أثناء حظر المستخدم: {e}")
 
-@admin_bot.message_handler(commands=['unban'])
+@admin_bot.message_handler(commands=['unblock'])
 def unblock_user(message):
     """إلغاء حظر مستخدم"""
     try:
-        user_id = message.text.split()[1]  # الحصول على معرف المستخدم من الرسالة
-        if user_id in user_db:
-            del user_db[user_id]  # إلغاء حظر المستخدم
-            admin_bot.reply_to(message, f"✅ تم إلغاء حظر المستخدم ذو المعرف {user_id}.")
+        user_ip = message.text.split()[1]  # الحصول على عنوان IP من الرسالة
+        if user_ip in user_db:
+            del user_db[user_ip]  # إلغاء حظر المستخدم
+            admin_bot.reply_to(message, f"✅ تم إلغاء حظر المستخدم ذو العنوان {user_ip}.")
         else:
-            admin_bot.reply_to(message, f"ℹ️ المستخدم ذو المعرف {user_id} غير محظور.")
+            admin_bot.reply_to(message, f"ℹ️ المستخدم ذو العنوان {user_ip} غير محظور.")
     except IndexError:
-        admin_bot.reply_to(message, "❌ يجب إرسال معرف المستخدم مع الأمر. مثال: /unblock user123")
+        admin_bot.reply_to(message, "❌ يجب إرسال عنوان IP مع الأمر. مثال: /unblock 192.168.1.1")
     except Exception as e:
         admin_bot.reply_to(message, f"❌ حدث خطأ أثناء إلغاء حظر المستخدم: {e}")
 
