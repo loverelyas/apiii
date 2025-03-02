@@ -5,6 +5,8 @@ import telebot
 import uuid
 from flask import Flask, request, jsonify
 import Pycodz.ai as z44o
+import threading
+
 # قراءة التوكن ومعرف الدردشة من البيئة
 BOTTOKEN = '7207961885:AAGRf5GZTCOGL5QSBe56xTs7C1d8kpM-R5s'
 ADMINID = '1090494697'
@@ -15,6 +17,8 @@ admin_bot = telebot.TeleBot(BOTTOKEN)
 # قاعدة بيانات مؤقتة (تستخدم ذاكرة البوت)
 user_db = {}  # تخزين بيانات المستخدمين {user_id: is_blocked}
 
+
+user_db_lock = threading.Lock()
 
 
 def install_missing_packages():
@@ -77,33 +81,33 @@ IP: {user_ip}
         return jsonify({"error": "❌ خطأ داخلي في السيرفر", "details": str(e), "status": "error"}), 500
 
 # أوامر البوت للتحكم في المستخدمين
+
 @admin_bot.message_handler(commands=['block'])
 def block_user(message):
-    """حظر مستخدم"""
     try:
-        user_ip = message.text.split()[1]  # الحصول على عنوان IP من الرسالة
-        user_db[user_ip] = 1  # حظر المستخدم
-        admin_bot.reply_to(message, f"✅ تم حظر المستخدم ذو العنوان {user_ip}.")
+        user_id = message.text.split()[1]
+        with user_db_lock:
+            user_db[user_id] = 1
+        admin_bot.reply_to(message, f"✅ تم حظر المستخدم ذو المعرف {user_id}.")
     except IndexError:
-        admin_bot.reply_to(message, "❌ يجب إرسال عنوان IP مع الأمر. مثال: /block 192.168.1.1")
+        admin_bot.reply_to(message, "❌ يجب إرسال معرف المستخدم مع الأمر. مثال: /block user123")
     except Exception as e:
         admin_bot.reply_to(message, f"❌ حدث خطأ أثناء حظر المستخدم: {e}")
 
 @admin_bot.message_handler(commands=['unblock'])
 def unblock_user(message):
-    """إلغاء حظر مستخدم"""
     try:
-        user_ip = message.text.split()[1]  # الحصول على عنوان IP من الرسالة
-        if user_ip in user_db:
-            del user_db[user_ip]  # إلغاء حظر المستخدم
-            admin_bot.reply_to(message, f"✅ تم إلغاء حظر المستخدم ذو العنوان {user_ip}.")
-        else:
-            admin_bot.reply_to(message, f"ℹ️ المستخدم ذو العنوان {user_ip} غير محظور.")
+        user_id = message.text.split()[1]
+        with user_db_lock:
+            if user_id in user_db:
+                del user_db[user_id]
+                admin_bot.reply_to(message, f"✅ تم إلغاء حظر المستخدم ذو المعرف {user_id}.")
+            else:
+                admin_bot.reply_to(message, f"ℹ️ المستخدم ذو المعرف {user_id} غير محظور.")
     except IndexError:
-        admin_bot.reply_to(message, "❌ يجب إرسال عنوان IP مع الأمر. مثال: /unblock 192.168.1.1")
+        admin_bot.reply_to(message, "❌ يجب إرسال معرف المستخدم مع الأمر. مثال: /unblock user123")
     except Exception as e:
         admin_bot.reply_to(message, f"❌ حدث خطأ أثناء إلغاء حظر المستخدم: {e}")
-
 if __name__ == '__main__':
     # تشغيل البوت في خيط منفصل
     import threading
