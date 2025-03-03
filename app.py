@@ -21,7 +21,7 @@ admin_bot = telebot.TeleBot(BOTTOKEN)
 # قاعدة بيانات مؤقتة (تستخدم ذاكرة البوت)
 
 def get_db_connection():
-    conn = psycopg2.connect(os.getenv("DATABASE_URL"))  # DATABASE_URL من متغيرات البيئة
+    conn = psycopg2.connect("postgresql://postgres:InHGbcDmAGPhlguXUfaPjJZquBQtUVBf@postgres.railway.internal:5432/railway")  # DATABASE_URL من متغيرات البيئة
     return conn
 
 # إنشاء جدول إذا لم يكن موجودًا
