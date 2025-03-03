@@ -52,3 +52,4 @@ orjson
 poe-api-wrapper
 pyTelegramBotAPI
 uuid
+psycopg2-binary
